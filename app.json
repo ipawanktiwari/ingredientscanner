@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Ingredient Scanner",
+    "slug": "ingredientscanner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0f0f23"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ingredientscanner.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera is used to scan barcodes on food products to retrieve ingredient information."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f0f23"
+      },
+      "package": "com.ingredientscanner.app",
+      "permissions": ["android.permission.CAMERA"]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Ingredient Scanner to access your camera to scan product barcodes."
+        }
+      ]
+    ],
+    "newArchEnabled": true
+  }
+}
