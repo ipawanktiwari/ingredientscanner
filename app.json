@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Ingredient Scanner",
-    "slug": "ingredientscanner",
+    "name": "Ingro",
+    "slug": "ingro-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,23 +11,23 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ingredientscanner.app",
+      "bundleIdentifier": "com.ingro.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Camera is used to scan barcodes on food products to retrieve ingredient information."
+        "NSCameraUsageDescription": "Ingro uses your camera to scan barcodes and analyze food ingredients instantly."
       }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0f0f23"
       },
-      "package": "com.ingredientscanner.app",
+      "package": "com.ingro.app",
       "permissions": ["android.permission.CAMERA"]
     },
     "plugins": [
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Ingredient Scanner to access your camera to scan product barcodes."
+          "cameraPermission": "Allow Ingro to access your camera to scan product barcodes and analyze ingredients."
         }
       ]
     ],

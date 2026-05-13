@@ -55,7 +55,7 @@ export default function App() {
             name="Scanner"
             component={ScannerScreen}
             options={{
-              title: 'Ingredient Scanner',
+              title: 'Ingro',
               headerLeft: () => null,
             }}
           />

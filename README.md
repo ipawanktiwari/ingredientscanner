@@ -1,8 +1,8 @@
-# Ingredient Scanner 🥫
+# Ingro 🥫
 
 **Scan barcodes → See ingredients → Get a health rating → Understand what you're eating.**
 
-A cross-platform mobile app (Android + iOS) built with React Native (Expo) that uses the [Open Food Facts](https://world.openfoodfacts.org/) public database to provide instant ingredient analysis, health ratings, and consumer-awareness information for packaged food products.
+Ingro (ingredients + pro) is a cross-platform mobile app (Android + iOS) built with React Native (Expo) that uses the [Open Food Facts](https://world.openfoodfacts.org/) public database to provide instant ingredient analysis, health ratings, and consumer-awareness information for packaged food products.
 
 ---
 
@@ -28,7 +28,7 @@ A cross-platform mobile app (Android + iOS) built with React Native (Expo) that 
 
 ```
 ┌─────────────────────────────┐  ┌─────────────────────────────┐
-│         Scanner              │  │      Product Analysis       │
+│          Ingro              │  │      Product Analysis       │
 │                              │  │                             │
 │    ┌───────────────────┐     │  │  ╭───╮  Product Name        │
 │    │                   │     │  │  │IMG│  Brand • Quantity     │
@@ -76,7 +76,7 @@ A cross-platform mobile app (Android + iOS) built with React Native (Expo) that 
 
 ```bash
 # Clone the repo
-git clone https://github.com/objectifylab/ingredientscanner.git
+git clone https://github.com/ipawanktiwari/ingredientscanner.git
 cd ingredientscanner
 
 # Install dependencies
@@ -218,4 +218,4 @@ MIT © Objectify Lab
 
 ## Disclaimer
 
-This app provides informational ratings based on publicly available data and established nutritional guidelines. It is **not** medical advice. Always consult a qualified healthcare professional for dietary decisions. The additive safety database is compiled from regulatory sources but may not be exhaustive.
+Ingro provides informational ratings based on publicly available data and established nutritional guidelines. It is **not** medical advice. Always consult a qualified healthcare professional for dietary decisions. The additive safety database is compiled from regulatory sources but may not be exhaustive.
