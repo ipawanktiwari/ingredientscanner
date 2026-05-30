@@ -15,7 +15,6 @@ import { fetchProduct, getAdditiveExplanation, detectAllergens } from '../servic
 import { calculateScore, generateIngredientAwareness } from '../services/scoring';
 import { saveToHistory } from '../utils/storage';
 import RatingBadge from '../components/RatingBadge';
-import IngredientCard from '../components/IngredientCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -27,7 +26,7 @@ export default function ProductScreen({ route, navigation }) {
   const [allergens, setAllergens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedTab, setSelectedTab] = useState('summary'); // summary, ingredients, additives
+  const [selectedTab, setSelectedTab] = useState('additives'); // additives, ingredients
 
   useEffect(() => {
     loadProduct();
@@ -39,7 +38,7 @@ export default function ProductScreen({ route, navigation }) {
     try {
       const data = await fetchProduct(barcode);
       if (!data) {
-        setError('Product not found in database. Try scanning the barcode again or check the product is registered in Open Food Facts.');
+        setError('product_not_found');
         return;
       }
 
@@ -76,12 +75,17 @@ export default function ProductScreen({ route, navigation }) {
   }
 
   if (error) {
+    const isNotFound = error === 'product_not_found';
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <MaterialIcons name="search-off" size={64} color="#666" />
-          <Text style={styles.errorTitle}>Product Not Found</Text>
-          <Text style={styles.errorText}>{error}</Text>
+          <MaterialIcons name={isNotFound ? 'search-off' : 'wifi-off'} size={64} color="#666" />
+          <Text style={styles.errorTitle}>{isNotFound ? 'Product Not Found' : 'Connection Issue'}</Text>
+          <Text style={styles.errorText}>
+            {isNotFound
+              ? 'This barcode was not found in our database. Open Food Facts may not have this product yet, especially for local/regional items.'
+              : error}
+          </Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => navigation.goBack()}
@@ -92,6 +96,9 @@ export default function ProductScreen({ route, navigation }) {
       </SafeAreaView>
     );
   }
+
+  const likes = getWhatYouLike(product, score);
+  const watches = getWhatToWatch(product, score);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -120,39 +127,49 @@ export default function ProductScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* Rating section */}
-        <View style={styles.ratingCard}>
+        {/* Score badge — centered, prominent */}
+        <View style={styles.scoreCard}>
           <RatingBadge
             rating={score.rating}
             label={score.label}
             size="large"
           />
-          <View style={styles.breakdown}>
-            {Object.entries(score.breakdown || {}).map(([key, val]) => {
-              const names = {
-                nutriscore: 'Nutri-Score',
-                nova: 'Processing',
-                additives: 'Additives',
-                nutrition: 'Nutrition',
-                ingredients: 'Ingredients',
-              };
-              return (
-                <View key={key} style={styles.breakdownItem}>
-                  <Text style={styles.breakdownLabel}>{names[key] || key}</Text>
-                  <View style={styles.breakdownBar}>
-                    <View
-                      style={[
-                        styles.breakdownFill,
-                        { width: `${Math.round((val / 25) * 100)}%` },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.breakdownValue}>{Math.round(val)}</Text>
-                </View>
-              );
-            })}
-          </View>
         </View>
+
+        {/* Nutrition overview */}
+        {hasNutritionData(product) && renderNutritionOverview(product)}
+
+        {/* What You'll Like */}
+        {likes.length > 0 && (
+          <View style={styles.likesCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.likesTitle}>What You'll Like  😊</Text>
+            </View>
+            {likes.map((item, i) => (
+              <View key={i} style={styles.likeRow}>
+                <Text style={styles.checkIcon}>✅</Text>
+                <Text style={styles.likeLabel}>{item.label}</Text>
+                <Text style={styles.likeValue}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* What to Watch */}
+        {watches.length > 0 && (
+          <View style={styles.watchCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.watchTitle}>What to Watch  ⚠️</Text>
+            </View>
+            {watches.map((item, i) => (
+              <View key={i} style={styles.watchRow}>
+                <Text style={styles.watchIcon}>⚠️</Text>
+                <Text style={styles.watchLabel}>{item.label}</Text>
+                <Text style={styles.watchValue}>{item.value}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Allergen warnings */}
         {allergens.length > 0 && (
@@ -165,58 +182,241 @@ export default function ProductScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Tabs: Summary / Ingredients / Additives */}
+        {/* Tabs: Additives / Ingredients */}
         <View style={styles.tabBar}>
-          {['summary', 'ingredients', 'additives'].map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tab, selectedTab === tab && styles.activeTab]}
-              onPress={() => setSelectedTab(tab)}
+          <TouchableOpacity
+            style={[styles.tab, selectedTab === 'additives' && styles.activeTab]}
+            onPress={() => setSelectedTab('additives')}
+          >
+            <Text style={[styles.tabIcon]}>
+              {selectedTab === 'additives' ? '🔧' : '🔧'}
+            </Text>
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === 'additives' && styles.activeTabText,
+              ]}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  selectedTab === tab && styles.activeTabText,
-                ]}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+              Additives ({product.additives ? product.additives.length : 0})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, selectedTab === 'ingredients' && styles.activeTab]}
+            onPress={() => setSelectedTab('ingredients')}
+          >
+            <Text style={[styles.tabIcon]}>
+              {selectedTab === 'ingredients' ? '🥣' : '🥣'}
+            </Text>
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === 'ingredients' && styles.activeTabText,
+              ]}
+            >
+              Ingredients ({product.ingredients ? product.ingredients.length : 0})
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Tab content */}
-        {selectedTab === 'summary' && renderSummary(awareness, product)}
+        {selectedTab === 'additives' && renderAdditivesTab(product)}
         {selectedTab === 'ingredients' && renderIngredients(product)}
-        {selectedTab === 'additives' && renderAdditives(product)}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function renderSummary(awareness, product) {
-  if (!awareness || awareness.length === 0) {
-    return (
-      <View style={styles.tabContent}>
-        <Text style={styles.noDataText}>No awareness data available.</Text>
-      </View>
-    );
-  }
+/**
+ * Check if we have enough nutrition data to show the overview.
+ */
+function hasNutritionData(product) {
+  const n = product.nutrition;
+  return n && (n.energyKcal > 0 || n.fat > 0 || n.proteins > 0 || n.fiber > 0 || n.sugars > 0);
+}
+
+/**
+ * Nutrition overview: key stats in a clean card.
+ */
+function renderNutritionOverview(product) {
+  const n = product.nutrition;
+  const rows = [
+    { icon: '🔥', label: 'Energy', value: `${n.energyKcal.toFixed(0)} kcal` },
+    { icon: '🧈', label: 'Total Fat', value: `${n.fat.toFixed(1)} g` },
+  ];
+
   return (
-    <View style={styles.tabContent}>
-      {awareness.map((item, i) => (
-        <View key={i} style={styles.awarenessCard}>
-          <View style={styles.awarenessHeader}>
-            <Text style={styles.awarenessIcon}>{item.icon}</Text>
-            <Text style={styles.awarenessTitle}>{item.title}</Text>
-          </View>
-          <Text style={styles.awarenessDetail}>{item.detail}</Text>
+    <View style={styles.nutritionCard}>
+      {rows.map((row, i) => (
+        <View key={i} style={styles.nutritionRow}>
+          <Text style={styles.nutritionIcon}>{row.icon}</Text>
+          <Text style={styles.nutritionLabel}>{row.label}</Text>
+          <Text style={styles.nutritionValue}>{row.value}</Text>
         </View>
       ))}
     </View>
   );
 }
 
+/**
+ * Determine positive highlights based on nutrition and processing data.
+ */
+function getWhatYouLike(product, score) {
+  const likes = [];
+  const n = product.nutrition;
+
+  if (n && n.proteins >= 12) {
+    likes.push({ label: 'Protein', value: `${n.proteins.toFixed(1)} g` });
+  }
+  if (n && n.fiber >= 3) {
+    likes.push({ label: 'Dietary Fiber', value: `${n.fiber.toFixed(1)} g` });
+  }
+  if (n && n.sugars <= 5) {
+    likes.push({ label: 'Total Sugars', value: `${n.sugars.toFixed(1)} g` });
+  }
+  if (n && n.saturatedFat >= 0 && n.saturatedFat <= 1.5) {
+    likes.push({ label: 'Saturated Fat', value: `${n.saturatedFat.toFixed(1)} g` });
+  }
+  if (n && n.salt >= 0 && n.salt <= 0.3) {
+    likes.push({ label: 'Salt', value: `${n.salt.toFixed(2)} g` });
+  }
+  if (product.novaGroup === 1 || product.novaGroup === 2) {
+    likes.push({ label: 'Processing', value: product.novaGroup === 1 ? 'Minimal' : 'Low' });
+  }
+  if (!product.additives || product.additives.length === 0) {
+    likes.push({ label: 'Additives', value: 'None added' });
+  }
+  if (product.ingredients && product.ingredients.length <= 5) {
+    likes.push({ label: 'Ingredients', value: `${product.ingredients.length} items` });
+  }
+  if (n && n.transFat !== undefined && n.transFat === 0) {
+    likes.push({ label: 'Trans Fat', value: '0 g' });
+  }
+
+  // Cap at 5 items max for readability
+  return likes.slice(0, 5);
+}
+
+/**
+ * Determine concerns based on nutrition and processing data.
+ */
+function getWhatToWatch(product, score) {
+  const watches = [];
+  const n = product.nutrition;
+
+  if (n && n.sugars > 22.5) {
+    watches.push({ label: 'Total Sugars', value: `${n.sugars.toFixed(1)} g` });
+  } else if (n && n.sugars > 11) {
+    watches.push({ label: 'Total Sugars', value: `${n.sugars.toFixed(1)} g` });
+  }
+  if (n && n.saturatedFat > 5) {
+    watches.push({ label: 'Saturated Fat', value: `${n.saturatedFat.toFixed(1)} g` });
+  }
+  if (n && n.salt > 1.5) {
+    watches.push({ label: 'Salt', value: `${n.salt.toFixed(2)} g` });
+  }
+  if (n && n.energyKcal > 500) {
+    watches.push({ label: 'Energy Density', value: `${n.energyKcal.toFixed(0)} kcal` });
+  }
+  if (product.novaGroup === 4) {
+    watches.push({ label: 'Processing', value: 'Ultra-processed' });
+  }
+  if (product.additives && product.additives.length > 5) {
+    watches.push({ label: 'Additives', value: `${product.additives.length} added` });
+  }
+  if (product.ingredients && product.ingredients.length > 10) {
+    watches.push({ label: 'Ingredients', value: `${product.ingredients.length} items` });
+  }
+
+  // Check first ingredients for sugar/fat
+  if (product.ingredients && product.ingredients.length >= 3) {
+    const firstThree = product.ingredients.slice(0, 3).map((i) => (i.name || '').toLowerCase());
+    const hasSugar = firstThree.some((n) =>
+      ['sugar', 'glucose', 'fructose', 'syrup', 'sucrose'].some((s) => n.includes(s))
+    );
+    if (hasSugar) {
+      watches.push({ label: '#1 Ingredient', value: 'Sugar-based' });
+    }
+  }
+
+  // Cap at 5 items
+  return watches.slice(0, 5);
+}
+
+/**
+ * Additives tab — shows each additive with color-coded concern level.
+ */
+function renderAdditivesTab(product) {
+  if (!product.additives || product.additives.length === 0) {
+    return (
+      <View style={styles.tabContent}>
+        <Text style={styles.noDataText}>
+          {product.ingredients && product.ingredients.length > 0
+            ? 'No additives detected — this product uses only whole-food ingredients!  👍'
+            : 'Additive analysis not available.'}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.tabContent}>
+      {product.additives.map((add, i) => {
+        const { dotColor, levelLabel, levelColor } = getConcernLevel(add.risk);
+        return (
+          <React.Fragment key={add.id || i}>
+            {i > 0 && <View style={styles.additiveDivider} />}
+            <TouchableOpacity style={styles.additiveRow} activeOpacity={0.7}>
+              <View style={[styles.concernDot, { backgroundColor: dotColor }]} />
+              <View style={styles.additiveInfo}>
+                <Text style={styles.additiveName}>{add.name}</Text>
+                <Text style={[styles.concernLabel, { color: levelColor }]}>
+                  {levelLabel}
+                </Text>
+              </View>
+              <MaterialIcons name="keyboard-arrow-down" size={22} color="#666" />
+            </TouchableOpacity>
+          </React.Fragment>
+        );
+      })}
+    </View>
+  );
+}
+
+/**
+ * Map additive risk level to display colors and labels.
+ */
+function getConcernLevel(risk) {
+  switch (risk) {
+    case 'high':
+      return {
+        dotColor: '#F44336',
+        levelLabel: 'High Concern',
+        levelColor: '#E57373',
+      };
+    case 'moderate':
+      return {
+        dotColor: '#F2A94F',
+        levelLabel: 'Minimal Concern',
+        levelColor: '#CC7235',
+      };
+    case 'low':
+      return {
+        dotColor: '#69B36B',
+        levelLabel: 'Generally Safe',
+        levelColor: '#66A76B',
+      };
+    default:
+      return {
+        dotColor: '#888',
+        levelLabel: 'Unknown',
+        levelColor: '#888',
+      };
+  }
+}
+
+/**
+ * Ingredients tab — full ingredient list.
+ */
 function renderIngredients(product) {
   if (!product.ingredients || product.ingredients.length === 0) {
     return (
@@ -250,35 +450,6 @@ function renderIngredients(product) {
             </View>
           )}
         </View>
-      ))}
-    </View>
-  );
-}
-
-function renderAdditives(product) {
-  if (!product.additives || product.additives.length === 0) {
-    return (
-      <View style={styles.tabContent}>
-        <Text style={styles.noDataText}>
-          {product.ingredients && product.ingredients.length > 0
-            ? 'No additives detected — this product uses only whole-food ingredients! 👍'
-            : 'Additive analysis not available.'}
-        </Text>
-      </View>
-    );
-  }
-  return (
-    <View style={styles.tabContent}>
-      <Text style={styles.additivesCount}>
-        {product.additives.length} additive{product.additives.length !== 1 ? 's' : ''} found
-      </Text>
-      {product.additives.map((add, i) => (
-        <IngredientCard
-          key={add.id || i}
-          additive={add}
-          explanation={getAdditiveExplanation(add.id)}
-          index={i}
-        />
       ))}
     </View>
   );
@@ -339,6 +510,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+
   // Header
   headerCard: {
     flexDirection: 'row',
@@ -383,52 +555,122 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 13,
   },
-  // Rating
-  ratingCard: {
-    flexDirection: 'row',
-    padding: 16,
+
+  // Score badge — centered
+  scoreCard: {
+    alignItems: 'center',
+    paddingVertical: 16,
     marginHorizontal: 12,
     marginTop: 10,
     backgroundColor: '#1a1a2e',
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#2a2a4e',
-    alignItems: 'center',
   },
-  breakdown: {
-    flex: 1,
-    marginLeft: 20,
+
+  // Nutrition overview
+  nutritionCard: {
+    marginHorizontal: 12,
+    marginTop: 10,
+    backgroundColor: '#1a1a2e',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2a2a4e',
+    padding: 14,
   },
-  breakdownItem: {
+  nutritionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    paddingVertical: 6,
   },
-  breakdownLabel: {
-    color: '#aaa',
-    fontSize: 11,
-    width: 70,
-    fontWeight: '500',
+  nutritionIcon: {
+    fontSize: 16,
+    width: 28,
   },
-  breakdownBar: {
+  nutritionLabel: {
+    color: '#b0b0b0',
+    fontSize: 14,
     flex: 1,
-    height: 6,
-    backgroundColor: '#2a2a4e',
-    borderRadius: 3,
-    marginHorizontal: 6,
-    overflow: 'hidden',
   },
-  breakdownFill: {
-    height: '100%',
-    backgroundColor: '#00E5FF',
-    borderRadius: 3,
+  nutritionValue: {
+    color: '#e0e0e0',
+    fontSize: 14,
+    fontWeight: '600',
   },
-  breakdownValue: {
-    color: '#ccc',
-    fontSize: 11,
-    width: 20,
-    textAlign: 'right',
+
+  // What You'll Like
+  likesCard: {
+    marginHorizontal: 12,
+    marginTop: 10,
+    backgroundColor: '#0d2618',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1a4a2a',
+    padding: 14,
   },
+  sectionHeader: {
+    marginBottom: 8,
+  },
+  likesTitle: {
+    color: '#6FCF97',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  likeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  checkIcon: {
+    fontSize: 14,
+    marginRight: 8,
+  },
+  likeLabel: {
+    color: '#b0d0b0',
+    fontSize: 13,
+    flex: 1,
+  },
+  likeValue: {
+    color: '#6FCF97',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // What to Watch
+  watchCard: {
+    marginHorizontal: 12,
+    marginTop: 10,
+    backgroundColor: '#2a1a0a',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#4a2a1a',
+    padding: 14,
+  },
+  watchTitle: {
+    color: '#FFB74D',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  watchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  watchIcon: {
+    fontSize: 14,
+    marginRight: 8,
+  },
+  watchLabel: {
+    color: '#d0b090',
+    fontSize: 13,
+    flex: 1,
+  },
+  watchValue: {
+    color: '#FFB74D',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
   // Allergens
   allergenCard: {
     flexDirection: 'row',
@@ -453,6 +695,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
+
   // Tabs
   tabBar: {
     flexDirection: 'row',
@@ -461,24 +704,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a2e',
     borderRadius: 12,
     padding: 4,
+    gap: 6,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
     borderRadius: 10,
+    gap: 4,
   },
   activeTab: {
-    backgroundColor: '#2a2a5e',
+    backgroundColor: '#4F2C96',
+  },
+  tabIcon: {
+    fontSize: 14,
   },
   tabText: {
     color: '#888',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   activeTabText: {
     color: '#fff',
   },
+
+  // Tab content (shared)
   tabContent: {
     paddingHorizontal: 12,
     paddingTop: 12,
@@ -491,35 +743,43 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     lineHeight: 20,
   },
-  // Awareness cards (summary)
-  awarenessCard: {
-    backgroundColor: '#1a1a2e',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#2a2a4e',
-  },
-  awarenessHeader: {
+
+  // Additives tab
+  additiveRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#1a1a2e',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2a2a4e',
     marginBottom: 6,
-    gap: 8,
   },
-  awarenessIcon: {
-    fontSize: 18,
+  additiveDivider: {
+    height: 0,
   },
-  awarenessTitle: {
+  concernDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  additiveInfo: {
+    flex: 1,
+  },
+  additiveName: {
     color: '#e0e0e0',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '500',
   },
-  awarenessDetail: {
-    color: '#b0b0b0',
-    fontSize: 13,
-    lineHeight: 18,
+  concernLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
   },
-  // Ingredient list
+
+  // Ingredients tab
   ingredientListHeader: {
     marginBottom: 14,
   },
@@ -574,11 +834,5 @@ const styles = StyleSheet.create({
     color: '#cca000',
     fontSize: 10,
     fontWeight: '700',
-  },
-  // Additives
-  additivesCount: {
-    color: '#888',
-    fontSize: 13,
-    marginBottom: 10,
   },
 });

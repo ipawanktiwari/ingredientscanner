@@ -6,25 +6,45 @@
 const BASE_URL = 'https://world.openfoodfacts.org/api/v2';
 
 /**
- * Look up a product by its barcode number.
+ * Look up a product by its barcode number with retry logic.
  * @param {string} barcode - EAN-13, EAN-8, UPC-A, or UPC-E barcode
+ * @param {number} retries - Number of retry attempts (default: 2)
  * @returns {object} Parsed product data with ingredients, nutrition, scores
  */
-export async function fetchProduct(barcode) {
+export async function fetchProduct(barcode, retries = 2) {
   const url = `${BASE_URL}/product/${barcode}.json`;
-  const response = await fetch(url);
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'Ingro - FoodScanner - v1.0' },
+      });
+
+      if (response.status === 429) {
+        // Rate limited — wait and retry
+        if (attempt < retries) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const json = await response.json();
+
+      if (json.status !== 1) {
+        return null; // Product not found
+      }
+
+      return parseProduct(json.product);
+    } catch (err) {
+      if (attempt >= retries) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+    }
   }
-
-  const json = await response.json();
-
-  if (json.status !== 1) {
-    return null; // Product not found
-  }
-
-  return parseProduct(json.product);
 }
 
 /**
@@ -33,7 +53,13 @@ export async function fetchProduct(barcode) {
 function parseProduct(raw) {
   const productName = raw.product_name || raw.product_name_en || 'Unknown Product';
   const brand = raw.brands || '';
-  const imageUrl = raw.image_url || null;
+  // Fix image URL — Open Food Facts sometimes returns relative paths
+  let imageUrl = raw.image_url || raw.image_small_url || null;
+  if (imageUrl && imageUrl.startsWith('//')) {
+    imageUrl = 'https:' + imageUrl;
+  } else if (imageUrl && imageUrl.startsWith('/')) {
+    imageUrl = 'https://world.openfoodfacts.org' + imageUrl;
+  }
 
   // --- Ingredients ---
   const ingredients = (raw.ingredients || []).map((ing) => ({
