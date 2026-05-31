@@ -1,9 +1,6 @@
-/**
- * Open Food Facts API service
- * Fetches product data by barcode and provides ingredient info.
- */
+import Config from '../config';
 
-const BASE_URL = 'https://world.openfoodfacts.org/api/v2';
+const BASE_URL = Config.OPEN_FOOD_FACTS.BASE_URL;
 
 /**
  * Look up a product by its barcode number with retry logic.
@@ -11,14 +8,20 @@ const BASE_URL = 'https://world.openfoodfacts.org/api/v2';
  * @param {number} retries - Number of retry attempts (default: 2)
  * @returns {object} Parsed product data with ingredients, nutrition, scores
  */
-export async function fetchProduct(barcode, retries = 2) {
+export async function fetchProduct(barcode, retries = Config.APP.MAX_RETRIES) {
   const url = `${BASE_URL}/product/${barcode}.json`;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      console.log('[Ingro API] Fetching:', url);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), Config.OPEN_FOOD_FACTS.TIMEOUT_MS);
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'Ingro - FoodScanner - v1.0' },
+        headers: { 'User-Agent': Config.OPEN_FOOD_FACTS.USER_AGENT },
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
+      console.log('[Ingro API] Response status:', response.status);
 
       if (response.status === 429) {
         // Rate limited — wait and retry
@@ -127,6 +130,7 @@ function parseProduct(raw) {
     },
     // Flag whether this has enough data for a reliable score
     hasNutritionData: Object.values(nutri).filter((v) => v != null).length > 0,
+    source: 'open_food_facts',
   };
 }
 
@@ -197,7 +201,7 @@ function getAdditiveRiskLevel(code) {
     'E628', 'E629', 'E630', 'E631', 'E632', 'E633', 'E634', 'E635',
     'E640',
     'E900', 'E901', 'E902', 'E903', 'E904', 'E905', 'E907',
-    'E912', 'E914', 'E915', 'E920', 'E921', 'E922', 'E923',
+    'E912', 'E914', 'E920', 'E921', 'E922', 'E923',
     'E950', 'E951', 'E952', 'E953', 'E954', 'E955', 'E957',
     'E959', 'E960', 'E961', 'E962', 'E963', 'E965', 'E966',
     'E967', 'E968', 'E969', 'E999',

@@ -11,6 +11,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import ScannerScreen from './src/screens/ScannerScreen';
 import ProductScreen from './src/screens/ProductScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
+import LabelScanScreen from './src/screens/LabelScanScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -125,6 +126,14 @@ export default function App() {
             component={ProductScreen}
             options={{
               title: 'Product Analysis',
+            }}
+          />
+          <Stack.Screen
+            name="LabelScan"
+            component={LabelScanScreen}
+            options={{
+              title: 'Scan Label',
+              headerShown: false,
             }}
           />
         </Stack.Navigator>

@@ -19,7 +19,7 @@ import RatingBadge from '../components/RatingBadge';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProductScreen({ route, navigation }) {
-  const { barcode, barcodeType } = route.params;
+  const { barcode, barcodeType, aiData } = route.params || {};
   const [product, setProduct] = useState(null);
   const [score, setScore] = useState(null);
   const [awareness, setAwareness] = useState([]);
@@ -30,13 +30,25 @@ export default function ProductScreen({ route, navigation }) {
 
   useEffect(() => {
     loadProduct();
-  }, [barcode]);
+  }, [barcode, aiData]);
 
   const loadProduct = async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const data = await fetchProduct(barcode);
+      let data = null;
+
+      // If we have AI-parsed data from label scan, use it directly
+      if (aiData) {
+        console.log('[Ingro] Using AI-parsed label data');
+        data = aiData;
+      } else if (barcode) {
+        // Otherwise fetch from Open Food Facts
+        console.log('[Ingro] Fetching from Open Food Facts:', barcode);
+        data = await fetchProduct(barcode);
+      }
+
       if (!data) {
         setError('product_not_found');
         return;
@@ -56,7 +68,14 @@ export default function ProductScreen({ route, navigation }) {
       // Save to history
       await saveToHistory({ ...data, rating: rating.rating, ratingLabel: rating.label });
     } catch (err) {
-      setError('Network error. Check your internet connection and try again.');
+      console.error('[Ingro] loadProduct error:', err.message, err.stack);
+      if (err.message && (err.message.includes('Network') || err.message.includes('fetch') || err.message.includes('timeout'))) {
+        setError('Network error. Check your internet connection and try again.');
+      } else if (err.message && err.message.includes('API error')) {
+        setError('Server error: ' + err.message);
+      } else {
+        setError('Something went wrong: ' + (err.message || 'Unknown error'));
+      }
     } finally {
       setLoading(false);
     }
@@ -67,8 +86,12 @@ export default function ProductScreen({ route, navigation }) {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#00E5FF" />
-          <Text style={styles.loadingText}>Looking up product...</Text>
-          <Text style={styles.barcodeText}>Barcode: {barcode}</Text>
+          <Text style={styles.loadingText}>
+            {aiData ? 'Processing label data...' : 'Looking up product...'}
+          </Text>
+          {barcode ? (
+            <Text style={styles.barcodeText}>Barcode: {barcode}</Text>
+          ) : null}
         </View>
       </SafeAreaView>
     );
@@ -83,15 +106,26 @@ export default function ProductScreen({ route, navigation }) {
           <Text style={styles.errorTitle}>{isNotFound ? 'Product Not Found' : 'Connection Issue'}</Text>
           <Text style={styles.errorText}>
             {isNotFound
-              ? 'This barcode was not found in our database. Open Food Facts may not have this product yet, especially for local/regional items.'
+              ? 'This barcode was not found in our database. Try scanning the ingredient label instead.'
               : error}
           </Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.retryButtonText}>Scan Again</Text>
-          </TouchableOpacity>
+          <View style={styles.errorActions}>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.retryButtonText}>Scan Again</Text>
+            </TouchableOpacity>
+            {isNotFound && (
+              <TouchableOpacity
+                style={styles.scanLabelButton}
+                onPress={() => navigation.replace('LabelScan', { barcode })}
+              >
+                <MaterialIcons name="document-scanner" size={18} color="#000" />
+                <Text style={styles.scanLabelText}>Scan Label</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -103,6 +137,16 @@ export default function ProductScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* AI Vision indicator */}
+        {product.source === 'ai_vision' && (
+          <View style={styles.aiBanner}>
+            <MaterialIcons name="auto-awesome" size={16} color="#FFD600" />
+            <Text style={styles.aiBannerText}>
+              Scanned from label · {product.confidence} confidence
+            </Text>
+          </View>
+        )}
+
         {/* Header: product image + name */}
         <View style={styles.headerCard}>
           {product.imageUrl ? (
@@ -113,7 +157,7 @@ export default function ProductScreen({ route, navigation }) {
             />
           ) : (
             <View style={styles.noImage}>
-              <MaterialIcons name="image-not-supported" size={48} color="#555" />
+              <MaterialIcons name={product.source === 'ai_vision' ? 'document-scanner' : 'image-not-supported'} size={48} color="#555" />
             </View>
           )}
           <View style={styles.headerInfo}>
@@ -498,8 +542,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  retryButton: {
+  errorActions: {
     marginTop: 24,
+    gap: 12,
+    alignItems: 'center',
+  },
+  retryButton: {
     paddingVertical: 12,
     paddingHorizontal: 32,
     backgroundColor: '#00E5FF',
@@ -509,6 +557,40 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '700',
+  },
+  scanLabelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#FFD600',
+    borderRadius: 10,
+  },
+  scanLabelText: {
+    color: '#000',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  // AI banner
+  aiBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#1a1a0a',
+    marginHorizontal: 12,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2a2a1a',
+  },
+  aiBannerText: {
+    color: '#FFD600',
+    fontSize: 13,
+    fontWeight: '500',
   },
 
   // Header

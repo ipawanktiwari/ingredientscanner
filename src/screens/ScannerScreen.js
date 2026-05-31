@@ -78,6 +78,10 @@ export default function ScannerScreen({ navigation }) {
     navigation.navigate('Product', { barcode: data, barcodeType: type });
   };
 
+  const handleScanLabel = () => {
+    navigation.navigate('LabelScan', {});
+  };
+
   if (!permission) {
     return (
       <View style={styles.container}>
@@ -150,25 +154,37 @@ export default function ScannerScreen({ navigation }) {
         {/* Bottom info area */}
         <View style={styles.bottomArea}>
           <Text style={styles.instructionText}>
-            Point your camera at a product barcode
+            Scan barcode or flip & scan the ingredient label
           </Text>
-          <TouchableOpacity
-            style={styles.flashButton}
-            onPress={() => setFlash(flash === 'off' ? 'on' : 'off')}
-          >
-            <MaterialIcons
-              name={flash === 'on' ? 'flash-on' : 'flash-off'}
-              size={28}
-              color="#fff"
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.historyButton}
-            onPress={() => navigation.navigate('History')}
-          >
-            <MaterialIcons name="history" size={24} color="#fff" />
-            <Text style={styles.historyButtonText}>History</Text>
-          </TouchableOpacity>
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.flashButton}
+              onPress={() => setFlash(flash === 'off' ? 'on' : 'off')}
+            >
+              <MaterialIcons
+                name={flash === 'on' ? 'flash-on' : 'flash-off'}
+                size={28}
+                color="#fff"
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.scanLabelButton}
+              onPress={handleScanLabel}
+            >
+              <MaterialIcons name="document-scanner" size={22} color="#000" />
+              <Text style={styles.scanLabelText}>Scan Label</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.historyButton}
+              onPress={() => navigation.navigate('History')}
+            >
+              <MaterialIcons name="history" size={24} color="#fff" />
+              <Text style={styles.historyButtonText}>History</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -250,10 +266,16 @@ const styles = StyleSheet.create({
   },
   instructionText: {
     color: '#ccc',
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
     marginBottom: 24,
     opacity: 0.8,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   flashButton: {
     width: 56,
@@ -262,7 +284,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+  },
+  scanLabelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: '#FFD600',
+  },
+  scanLabelText: {
+    color: '#000',
+    fontSize: 15,
+    fontWeight: '700',
   },
   historyButton: {
     flexDirection: 'row',
