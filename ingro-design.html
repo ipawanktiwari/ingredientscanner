@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ingro — App Design</title>
+<style>
+  :root {
+    --bg: #0a0a1a;
+    --surface: #12122a;
+    --surface2: #1a1a36;
+    --border: #2a2a4a;
+    --accent: #00E5FF;
+    --accent-dim: rgba(0, 229, 255, 0.15);
+    --green: #00E676;
+    --yellow: #FFD600;
+    --orange: #FF9100;
+    --red: #FF1744;
+    --text: #f0f0f5;
+    --muted: #707090;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #050510;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    color: var(--text);
+  }
+
+  h1 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  h2 {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .flow-arrow {
+    color: var(--muted);
+    font-size: 28px;
+    margin: 20px 0;
+    text-align: center;
+  }
+
+  .phone-container {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .phone {
+    width: 340px;
+    background: var(--bg);
+    border-radius: 40px;
+    border: 2px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.03);
+    position: relative;
+  }
+
+  .phone-notch {
+    height: 28px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .phone-notch span {
+    width: 120px;
+    height: 6px;
+    background: #1a1a2e;
+    border-radius: 3px;
+  }
+
+  .phone-screen {
+    padding: 16px 16px 24px;
+    min-height: 680px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .phone-label {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  /* ─── HOME SCREEN ─── */
+  .home-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .home-logo {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .home-logo span { color: var(--accent); }
+
+  .home-header-right {
+    display: flex;
+    gap: 12px;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: default;
+    border: 1px solid var(--border);
+  }
+
+  .hero-card {
+    background: linear-gradient(135deg, #0d1b2a, #1a0a2e);
+    border-radius: var(--radius);
+    padding: 24px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, var(--accent-dim) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .hero-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .hero-card h3 {
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+
+  .hero-card p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .scan-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    cursor: default;
+    transition: none;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .feature-card {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .feature-card .icon { font-size: 20px; margin-bottom: 8px; }
+  .feature-card .title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .feature-card .desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  .recent-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .recent-empty {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ─── SCANNER OVERLAY ─── */
+  .scanner-viewfinder {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3/4;
+    background: #000;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .scanner-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #0a0a1a 0%, transparent 30%, transparent 70%, #0a0a1a 100%);
+  }
+
+  .scanner-frame {
+    width: 220px;
+    height: 220px;
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.15);
+  }
+
+  .scanner-frame::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -1px;
+    width: calc(100% + 2px);
+    height: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: scan 2s ease-in-out infinite;
+  }
+
+  @keyframes scan {
+    0%, 100% { top: 0; }
+    50% { top: calc(100% - 2px); }
+  }
+
+  .scanner-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: var(--accent);
+    border-style: solid;
+  }
+  .scanner-corner.tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
+  .scanner-corner.tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-radius: 0 6px 0 0; }
+  .scanner-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-radius: 0 0 0 6px; }
+  .scanner-corner.br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
+
+  .scanner-hint {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .scanner-controls {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 12px;
+  }
+
+  .scanner-controls .icon-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  /* ─── PRODUCT SCREEN ─── */
+  .product-header {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .product-image {
+    width: 80px;
+    height: 80px;
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+
+  .product-info {
+    flex: 1;
+  }
+
+  .product-info h3 {
+    font-size: 16px;
+    margin-bottom: 2px;
+  }
+
+  .product-info .brand {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .rating-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    border-radius: 8px;
+    cursor: default;
+  }
+
+  .tab.active {
+    background: var(--surface2);
+    color: var(--accent);
+  }
+
+  .alert-card {
+    background: rgba(255, 215, 0, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .alert-card .icon { font-size: 18px; }
+  .alert-card .text { font-size: 12px; line-height: 1.4; flex: 1; }
+  .alert-card .text strong { color: var(--yellow); }
+
+  .metric-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .metric {
+    flex: 1;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .metric .value {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .metric .label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  /* ─── HISTORY SCREEN ─── */
+  .history-item {
+    display: flex;
+    gap: 12px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .history-item .thumb {
+    width: 44px;
+    height: 44px;
+    background: var(--surface2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .history-item .info { flex: 1; }
+  .history-item .info .name { font-size: 14px; font-weight: 600; }
+  .history-item .info .brand { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .history-item .info .date { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+  .history-item .rating-dot {
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+  }
+
+  .tag-new {
+    display: inline-block;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0 0;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: var(--muted);
+    cursor: default;
+  }
+
+  .nav-item.active {
+    color: var(--accent);
+  }
+
+  .nav-item .nav-icon { font-size: 20px; }
+</style>
+</head>
+<body>
+
+<h1>INGRO — Mobile App Redesign</h1>
+<h2>Dark theme • 4 screens • New flow</h2>
+
+<div class="flow-arrow">Home Screen → Scanner → Product → History</div>
+
+<div class="phone-container">
+
+<!-- HOME SCREEN -->
+<div class="phone">
+  <div class="phone-notch"><span></span></div>
+  <div class="phone-screen">
+    <div class="home-header">
+      <div class="home-logo">in<span>gro</span></div>
+      <div class="home-header-right">
+        <div class="icon-btn">⚙</div>
+      </div>
+    </div>
+
+    <div class="hero-card">
+      <div class="hero-icon">🥫</div>
+      <h3>Know What You Eat</h3>
+      <p>Scan any packaged food barcode to get instant health ratings, ingredient analysis, and plain-English explanations.</p>
+    </div>
+
+    <div class="scan-btn">
+      📷 Scan a Product
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">⭐</div>
+        <div class="title">Health Rating</div>
+        <div class="desc">0–5 score based on 5 scientific factors</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🧪</div>
+        <div class="title">Additive Alerts</div>
+        <div class="desc">300+ additive DB with risk levels</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🥜</div>
+        <div class="title">Allergen Scan</div>
+        <div class="desc">Auto-detect 10 allergen categories</div>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📋</div>
+        <div class="title">Full Ingredients</div>
+        <div class="desc">Ranked list with % estimates</div>
+      </div>
+    </div>
+
+    <div class="recent-title">Recent Scans</div>
+    <div class="recent-empty">No scans yet — scan your first product above</div>
+
+    <div class="bottom-nav">
+      <div class="nav-item active"><span class="nav-icon">🏠</span>Home</div>
+      <div class="nav-item"><span class="nav-icon">📷</span>Scan</div>
+      <div class="nav-item"><span class="nav-icon">📋</span>History</div>
+    </div>
+  </div>
+  <div class="phone-label">🏠 Home Screen (NEW)</div>
+</div>
+
+<!-- SCANNER SCREEN -->
+<div class="phone">
+  <div class="phone-notch"><span></span></div>
+  <div class="phone-screen">
+    <div class="home-header">
+      <div class="home-logo" style="font-size:18px">in<span>gro</span></div>
+      <div class="home-header-right">
+        <div class="icon-btn">🔦</div>
+      </div>
+    </div>
+
+    <div class="scanner-viewfinder">
+      <div class="scanner-bg"></div>
+      <div class="scanner-frame">
+        <div class="scanner-corner tl"></div>
+        <div class="scanner-corner tr"></div>
+        <div class="scanner-corner bl"></div>
+        <div class="scanner-corner br"></div>
+      </div>
+    </div>
+
+    <div class="scanner-hint">Point camera at a product barcode</div>
+
+    <div class="scanner-controls">
+      <div class="icon-btn">🔄</div>
+      <div class="icon-btn" style="background:var(--accent-dim);border-color:var(--accent);">📷</div>
+      <div class="icon-btn">📋</div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item"><span class="nav-icon">🏠</span>Home</div>
+      <div class="nav-item active"><span class="nav-icon">📷</span>Scan</div>
+      <div class="nav-item"><span class="nav-icon">📋</span>History</div>
+    </div>
+  </div>
+  <div class="phone-label">📷 Scanner Screen</div>
+</div>
+
+<!-- PRODUCT SCREEN -->
+<div class="phone">
+  <div class="phone-notch"><span></span></div>
+  <div class="phone-screen">
+    <div class="home-header" style="margin-bottom:8px">
+      <div class="icon-btn">←</div>
+      <div style="font-size:14px;font-weight:600">Product Analysis</div>
+      <div style="width:38px"></div>
+    </div>
+
+    <div class="product-header">
+      <div class="product-image">🥫</div>
+      <div class="product-info">
+        <h3>Classic Baked Beans</h3>
+        <div class="brand">Heinz · 415g</div>
+        <div class="rating-badge">⭐ 3.8 <span style="font-weight:400;font-size:11px">/ 5.0</span></div>
+      </div>
+    </div>
+
+    <div class="alert-card">
+      <span class="icon">⚠️</span>
+      <span class="text"><strong>Watch the sugar</strong> — 22g per 100g. Contains high-fructose corn syrup.</span>
+    </div>
+
+    <div class="metric-row">
+      <div class="metric">
+        <div class="value" style="color:var(--yellow)">C</div>
+        <div class="label">Nutri-Score</div>
+      </div>
+      <div class="metric">
+        <div class="value" style="color:var(--green)">1</div>
+        <div class="label">NOVA Group</div>
+      </div>
+      <div class="metric">
+        <div class="value" style="color:var(--orange)">Mod</div>
+        <div class="label">Additives</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active">Summary</div>
+      <div class="tab">Ingredients</div>
+      <div class="tab">Additives</div>
+    </div>
+
+    <div style="font-size:13px;color:var(--muted);line-height:1.6;flex:1">
+      ✅ High protein (12g)<br>
+      ✅ Low saturated fat<br>
+      ⚠️ Added sugar (22g/100g)<br>
+      ⚠️ Contains modified starch
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item"><span class="nav-icon">🏠</span>Home</div>
+      <div class="nav-item"><span class="nav-icon">📷</span>Scan</div>
+      <div class="nav-item"><span class="nav-icon">📋</span>History</div>
+    </div>
+  </div>
+  <div class="phone-label">📊 Product Analysis Screen</div>
+</div>
+
+<!-- HISTORY SCREEN -->
+<div class="phone">
+  <div class="phone-notch"><span></span></div>
+  <div class="phone-screen">
+    <div class="home-header" style="margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700">Scan History</div>
+      <div class="icon-btn" style="font-size:14px">🗑</div>
+    </div>
+
+    <div class="history-item">
+      <div class="thumb">🥫</div>
+      <div class="info">
+        <div class="name">Classic Baked Beans</div>
+        <div class="brand">Heinz</div>
+        <div class="date">Today · 2:30 PM</div>
+      </div>
+      <div class="rating-dot" style="color:var(--accent)">3.8</div>
+    </div>
+
+    <div class="history-item">
+      <div class="thumb">🥛</div>
+      <div class="info">
+        <div class="name">Organic Whole Milk</div>
+        <div class="brand">Amul</div>
+        <div class="date">Today · 1:15 PM</div>
+      </div>
+      <div class="rating-dot" style="color:var(--green)">4.6</div>
+    </div>
+
+    <div class="history-item">
+      <div class="thumb">🍪</div>
+      <div class="info">
+        <div class="name">Chocolate Chip Cookies</div>
+        <div class="brand">Britannia</div>
+        <div class="date">Yesterday · 6:45 PM</div>
+      </div>
+      <div class="rating-dot" style="color:var(--red)">1.2</div>
+    </div>
+
+    <div class="history-item">
+      <div class="thumb">🍜</div>
+      <div class="info">
+        <div class="name">Instant Noodles</div>
+        <div class="brand">Maggi</div>
+        <div class="date">Yesterday · 12:30 PM</div>
+      </div>
+      <div class="rating-dot" style="color:var(--orange)">2.1</div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item"><span class="nav-icon">🏠</span>Home</div>
+      <div class="nav-item"><span class="nav-icon">📷</span>Scan</div>
+      <div class="nav-item active"><span class="nav-icon">📋</span>History</div>
+    </div>
+  </div>
+  <div class="phone-label">📋 Scan History Screen</div>
+</div>
+
+</div>
+
+<div style="margin-top:30px;max-width:720px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6;background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);">
+  <strong style="color:var(--accent)">Design Changes:</strong><br>
+  🏠 <strong>Home Screen (NEW)</strong> — Welcome card, scan CTA button, feature grid, recent scans<br>
+  📷 <strong>Scanner</strong> — Clean viewfinder with animated scan line, persistent bottom nav<br>
+  📊 <strong>Product</strong> — 3-tab layout (Summary/Ingredients/Additives), alert cards, metric row<br>
+  📋 <strong>History</strong> — Product thumbnails, ratings, date-stamped entries<br>
+  🔄 <strong>Bottom nav</strong> across all screens for easy switching
+</div>
+
+</body>
+</html>
