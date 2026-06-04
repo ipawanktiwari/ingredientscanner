@@ -3,90 +3,33 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   SafeAreaView,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getApiKey, setApiKey } from '../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from '../config';
+import { clearAuth } from '../services/apiClient';
 
 export default function SettingsScreen({ navigation }) {
-  const [apiKey, setApiKeyState] = useState('');
-  const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [deviceId, setDeviceId] = useState('');
 
   useEffect(() => {
-    loadApiKey();
+    loadDevice();
   }, []);
 
-  const loadApiKey = async () => {
+  const loadDevice = async () => {
     try {
-      const key = await getApiKey();
-      if (key) {
-        setApiKeyState(key);
-      }
-    } catch (err) {
-      console.error('[Settings] Error loading API key:', err);
-    } finally {
-      setLoading(false);
-    }
+      const id = await AsyncStorage.getItem('@ingro:device_id');
+      if (id) setDeviceId(id.substring(0, 16) + '...');
+    } catch {}
   };
 
-  const handleSave = async () => {
-    if (!apiKey.trim()) {
-      Alert.alert('Error', 'Please enter your API key');
-      return;
-    }
-
-    try {
-      const success = await setApiKey(apiKey.trim());
-      if (success) {
-        setSaved(true);
-        Alert.alert('Success', 'API key saved successfully');
-        setTimeout(() => setSaved(false), 2000);
-      } else {
-        Alert.alert('Error', 'Failed to save API key');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Failed to save API key: ' + err.message);
-    }
+  const handleLogout = async () => {
+    await clearAuth();
+    setDeviceId('');
   };
-
-  const handleTestKey = async () => {
-    if (!apiKey.trim()) {
-      Alert.alert('Error', 'Please enter your API key first');
-      return;
-    }
-
-    try {
-      // Test the key by making a simple request
-      const response = await fetch('https://api.commandcode.ai/provider/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${apiKey.trim()}`,
-        },
-      });
-
-      if (response.ok) {
-        Alert.alert('Success', 'API key is valid!');
-      } else {
-        Alert.alert('Error', 'API key is invalid or expired');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Could not test API key: ' + err.message);
-    }
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading settings...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -97,73 +40,56 @@ export default function SettingsScreen({ navigation }) {
           <Text style={styles.title}>Settings</Text>
         </View>
 
-        {/* API Key Section */}
+        {/* Account Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Command Code API Key</Text>
-          <Text style={styles.sectionDesc}>
-            Required for AI label scanning. Get your key from commandcode.ai
-          </Text>
-
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              value={apiKey}
-              onChangeText={setApiKeyState}
-              placeholder="Enter your API key"
-              placeholderTextColor="#666"
-              secureTextEntry={true}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {saved && (
-              <MaterialIcons name="check-circle" size={24} color="#4CAF50" style={styles.savedIcon} />
-            )}
+          <Text style={styles.sectionTitle}>Account</Text>
+          <View style={styles.infoRow}>
+            <MaterialIcons name="devices" size={18} color="#888" />
+            <Text style={styles.infoLabel}>Device ID</Text>
+            <Text style={styles.infoValue}>{deviceId || 'Not registered'}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <MaterialIcons name="cloud" size={18} color="#888" />
+            <Text style={styles.infoLabel}>Backend</Text>
+            <Text style={styles.infoValue}>objectifylab.com</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <MaterialIcons name="api" size={18} color="#888" />
+            <Text style={styles.infoLabel}>Scans</Text>
+            <Text style={styles.infoValue}>5 free / day</Text>
           </View>
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[styles.button, styles.testButton]}
-              onPress={handleTestKey}
-            >
-              <MaterialIcons name="wifi-tethering" size={18} color="#000" />
-              <Text style={styles.buttonText}>Test Key</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
-              onPress={handleSave}
-            >
-              <MaterialIcons name="save" size={18} color="#000" />
-              <Text style={styles.buttonText}>Save Key</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <MaterialIcons name="logout" size={18} color="#FF5252" />
+            <Text style={styles.logoutText}>Reset Account</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Info Section */}
-        <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>How to get your API key:</Text>
+        {/* How It Works */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>How Ingro Works</Text>
           <View style={styles.infoStep}>
             <Text style={styles.stepNumber}>1</Text>
-            <Text style={styles.stepText}>Visit commandcode.ai and sign up</Text>
+            <Text style={styles.stepText}>Scan a barcode — we look it up in Open Food Facts</Text>
           </View>
           <View style={styles.infoStep}>
             <Text style={styles.stepNumber}>2</Text>
-            <Text style={styles.stepText}>Go to Dashboard → API Keys</Text>
+            <Text style={styles.stepText}>Not found? Flip & scan the ingredient label with AI</Text>
           </View>
           <View style={styles.infoStep}>
             <Text style={styles.stepNumber}>3</Text>
-            <Text style={styles.stepText}>Create a new key and copy it</Text>
+            <Text style={styles.stepText}>Get a 0-5 health rating with detailed breakdown</Text>
           </View>
           <View style={styles.infoStep}>
             <Text style={styles.stepNumber}>4</Text>
-            <Text style={styles.stepText}>Paste it here and save</Text>
+            <Text style={styles.stepText}>No API keys needed — everything runs on our servers</Text>
           </View>
         </View>
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appInfoTitle}>Ingro v1.4.0</Text>
-          <Text style={styles.appInfoText}>Know what you eat</Text>
+          <Text style={styles.appInfoTitle}>Ingro v{Config.APP.VERSION}</Text>
+          <Text style={styles.appInfoText}>Know what you eat — backed by science + AI</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -178,15 +104,6 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     padding: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: '#888',
-    fontSize: 16,
   },
   header: {
     flexDirection: 'row',
@@ -212,80 +129,52 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 8,
-  },
-  sectionDesc: {
-    color: '#888',
-    fontSize: 14,
     marginBottom: 16,
-    lineHeight: 20,
   },
-  inputContainer: {
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a2e',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a4e',
-    marginBottom: 16,
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a2e',
   },
-  input: {
+  infoLabel: {
+    color: '#888',
+    fontSize: 14,
     flex: 1,
-    color: '#fff',
-    fontSize: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
   },
-  savedIcon: {
-    marginRight: 12,
+  infoValue: {
+    color: '#ccc',
+    fontSize: 14,
+    fontWeight: '500',
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  button: {
-    flex: 1,
+  logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
+    marginTop: 16,
+    paddingVertical: 12,
     borderRadius: 12,
-  },
-  testButton: {
-    backgroundColor: '#FFD600',
-  },
-  saveButton: {
-    backgroundColor: '#00E5FF',
-  },
-  buttonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  infoSection: {
-    backgroundColor: '#0d1b2a',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 20,
+    backgroundColor: 'rgba(255,82,82,0.1)',
     borderWidth: 1,
-    borderColor: '#1a2a3a',
+    borderColor: 'rgba(255,82,82,0.3)',
   },
-  infoTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 16,
+  logoutText: {
+    color: '#FF5252',
+    fontSize: 15,
+    fontWeight: '600',
   },
   infoStep: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
     marginBottom: 12,
   },
   stepNumber: {
     color: '#00E5FF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
     width: 28,
     height: 28,
@@ -299,6 +188,7 @@ const styles = StyleSheet.create({
     color: '#b0b0b0',
     fontSize: 14,
     flex: 1,
+    lineHeight: 20,
   },
   appInfo: {
     alignItems: 'center',
