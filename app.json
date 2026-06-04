@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ingro",
     "slug": "ingro-app",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -22,7 +22,8 @@
       },
       "package": "com.ingro.app",
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.INTERNET"
       ]
     },
     "plugins": [
@@ -32,8 +33,15 @@
           "cameraPermission": "Allow Ingro to access your camera to scan product barcodes and analyze ingredients."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-font"
     ],
-    "newArchEnabled": true
+    "newArchEnabled": false,
+    "extra": {
+      "eas": {
+        "projectId": "4ab3411a-39ee-421d-98a3-cfebcb52d641"
+      }
+    },
+    "owner": "ipawanktiwari"
   }
 }
